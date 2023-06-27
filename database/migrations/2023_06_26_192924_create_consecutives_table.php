@@ -15,6 +15,7 @@ class CreateConsecutivesTable extends Migration
     {
         Schema::create('consecutives', function (Blueprint $table) {
             $table->id();
+            $table->string('consecutivo'); 
             $table->string('name');
             $table->unsignedBigInteger('monitor_id');
             $table->unsignedBigInteger('cultural_right_id');

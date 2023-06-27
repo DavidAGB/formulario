@@ -24,13 +24,19 @@ class ConsecutiveController extends Controller
 
     public function getConsecutiveData(Request $request)
     {
+
+
         try {
             $filters = $request->all('search');
-
             $filter_monitor = $request->filter_monitor;
             $filter_cultural_rights = $request->filter_cultural_rights;
             $filter_nac = $request->filter_nac;
             $filter_expertise = $request->filter_expertise;
+
+            $filter_date = $request->has('filter_date')
+                ? json_decode($request->filter_date, true)
+                : null;
+
 
             $data = Consecutive::with([
                 'monitor:id,name',
@@ -60,6 +66,11 @@ class ConsecutiveController extends Controller
                         $query->where('id',  $filter_expertise);
                     });
                 })
+
+                ->when(!empty($filter_date['from']) && !empty($filter_date['to']), function ($query) use ($filter_date) {
+                    return $query->whereBetween('created_at', [$filter_date['from'], $filter_date['to']]);
+                })
+
                 ->latest('id')
                 ->paginate(50);
 
@@ -73,7 +84,7 @@ class ConsecutiveController extends Controller
 
     public function saveConsecutives(Request $request)
     {
-         
+
         $this->validate($request, [
             'activity_name' => 'required',
             'monitor_id' => 'required|integer',
@@ -86,7 +97,11 @@ class ConsecutiveController extends Controller
         ]);
 
         try {
+
+            $newConsecutive = $this->getNextConsecutive();
+
             $consecutive = new Consecutive();
+            $consecutive->consecutivo =   'FP' . $newConsecutive;
             $consecutive->name = $request->activity_name;
             $consecutive->monitor_id = $request->monitor_id;
             $consecutive->cultural_right_id = $request->cultural_right_id;
@@ -109,6 +124,13 @@ class ConsecutiveController extends Controller
         }
     }
 
+    public function getNextConsecutive()
+    {
+        $lastRecord = DB::table('consecutives')->orderByRaw('substring(consecutivo, 3) desc')->first();
+
+        return is_null($lastRecord) ? 1 : substr($lastRecord->consecutivo, 2) + 1;
+    }
+
 
     public function getMonitorData(Request $request)
     {
@@ -125,7 +147,7 @@ class ConsecutiveController extends Controller
     {
         try {
 
-            $data = Nacs::select('id','name')->get();
+            $data = Nacs::select('id', 'name')->get();
             return response()->json(["success" => true, "data" => $data], Response::HTTP_OK);
         } catch (\Throwable $th) {
             return response()->json(["success" => false, 'message' => 'Something went wrong. Try again.'], Response::HTTP_NOT_FOUND);
@@ -135,7 +157,7 @@ class ConsecutiveController extends Controller
     {
         try {
 
-            $data = Cultural_rights::select('id','name')->get();
+            $data = Cultural_rights::select('id', 'name')->get();
             return response()->json(["success" => true, "data" => $data], Response::HTTP_OK);
         } catch (\Throwable $th) {
             return response()->json(["success" => false, 'message' => 'Something went wrong. Try again.'], Response::HTTP_NOT_FOUND);
@@ -145,7 +167,7 @@ class ConsecutiveController extends Controller
     {
         try {
 
-            $data = Expertises::select('id','name')->get();
+            $data = Expertises::select('id', 'name')->get();
             return response()->json(["success" => true, "data" => $data], Response::HTTP_OK);
         } catch (\Throwable $th) {
             return response()->json(["success" => false, 'message' => 'Something went wrong. Try again.'], Response::HTTP_NOT_FOUND);

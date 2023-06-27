@@ -13,23 +13,26 @@ class Consecutive extends Model
     {
         $query->when($filters['search'] ?? null,  function ($query, $search) {
             $query->where('id', 'LIKE', '%' . $search . '%')
+                ->orwhere('consecutivo', 'LIKE', '%' . $search . '%')
                 ->orwhere('name', 'LIKE', '%' . $search . '%')
+                
                 ->orwhereHas('monitor', function ($query) use ($search) {
                     $query->where('name', 'LIKE', '%' .  $search .  '%');
                 })
-                ->orWhereHas('Cultural_rights', function ($query) use ($search) {
+                ->orWhereHas('cultural_rights', function ($query) use ($search) {
                     $query->where('name', 'LIKE', '%' . $search . '%');
                 })
                 ->orWhereHas('nac', function ($query) use ($search) {
                     $query->where('name', 'LIKE', '%' . $search . '%');
                 })
-                ->orWhereHas(' expertise', function ($query) use ($search) {
+                ->orWhereHas('expertise', function ($query) use ($search) {
                     $query->where('name', 'LIKE', '%' . $search . '%');
                 });
         });
     }
 
     protected $fillable = [
+        'consecutivo',
         'name',
         'monitor_id',
         'cultural_right_id',
